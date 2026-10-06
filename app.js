@@ -242,6 +242,9 @@ function autoMatch() {
         else if ([...rt].some((x) => x.length > 3 && (x.startsWith(w) || w.startsWith(x)))) score += 1;
       }
       if (ft.includes(idTok)) score += 3;
+      // tie-break: prefer the newest year in the file name (e.g. license_2026 over license_2025)
+      const years = (f.name.match(/(19|20)\d{2}/g) || []).map(Number);
+      if (score > 0 && years.length) score += Math.max(...years) / 100000;
       if (score > 0) cands.push({ r, f, score });
     }
   }

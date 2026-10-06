@@ -57,10 +57,22 @@ Libraries (loaded from cdnjs): [pdf-lib](https://pdf-lib.js.org/) 1.17.1 to comb
 - Signature/seal placement and AI help are not implemented.
 - Saved work keeps only matches and dates, not the files. The files must be uploaded again.
 
-## Output
+## Output (sample pack)
 
-- `output/<tender_id>_Package.pdf`: the package generated from the provided sample pack.
-- `screenshots/`: the app showing the document statuses.
+- `output/T-2026-0417_Package.pdf`: the package built from the provided sample pack. It has 17 pages: cover, index, then R01–R05 and R08–R10 in order.
+- `screenshots/sample_problems_found.png`: the statuses while the problems are still there (expired license).
+- `screenshots/sample_statuses_en.png`, `screenshots/sample_statuses_bn.png`: the final statuses, all OK, in English and in Bangla.
+
+Problems found in the sample pack and how they were solved:
+
+| Problem | How the app shows it | Fix |
+|---|---|---|
+| `company_logo.png` is not a PDF | Rejected with a message | Not used |
+| `experience_cert.pdf` and `experience_cert (1).pdf` have exactly the same content | Marked "Duplicate"; cannot be matched to another document | Only one copy used, for R05 |
+| `trade_license_2025.pdf` expired on 2025-06-30, before the 2026-10-20 deadline | Status "Expired"; Generate is blocked | Used `trade_license_2026.pdf` (valid until 2027-06-30) |
+| The signed declaration has an unclear name (`scan_0042.pdf`, a scanned image) | R10 shows "Missing" until it is matched | Matched by hand after checking it with "View" |
+| Trade license and bank solvency need expiry dates | Status "Expiry date needed" | Entered 2027-06-30 and 2026-12-31 |
+| R06 and R07 are optional and have no file | "Not provided" (not blocking) | Skipped in the package |
 
 ## AI tools used
 
