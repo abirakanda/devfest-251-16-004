@@ -74,7 +74,6 @@ $('#req-input').addEventListener('change', async (e) => {
   const f = e.target.files[0];
   e.target.value = '';
   if (!f) return;
-  const box = $('#req-msg');
   try {
     const data = JSON.parse(await f.text());
     if (!data || typeof data.tender !== 'object' || !Array.isArray(data.requirements)) {
@@ -95,14 +94,11 @@ $('#req-input').addEventListener('change', async (e) => {
     state.reqs = reqs;
     state.match = {};
     state.expiry = {};
-    box.className = 'msg ok';
-    box.textContent = t('okJson', { n: reqs.length });
-    box.hidden = false;
+    state.reqMsg = { type: 'ok', key: 'okJson', vars: { n: reqs.length } };
   } catch (err) {
-    box.className = 'msg err';
-    box.textContent = t('errJson', { err: err.message });
-    box.hidden = false;
+    state.reqMsg = { type: 'err', key: 'errJson', vars: { err: err.message } };
   }
+  restoreWork();
   renderAll();
 });
 
@@ -169,6 +165,7 @@ async function addFiles(list) {
     added++;
   }
   if (added) state.fileMsgs.unshift({ type: 'ok', key: 'okAdded', vars: { n: added } });
+  restoreWork();
   renderAll();
 }
 
@@ -293,7 +290,38 @@ function download(blob, name) {
 }
 
 // ---------- Render ----------
+function renderReqMsg() {
+  const box = $('#req-msg');
+  if (!state.reqMsg) { box.hidden = true; return; }
+  box.className = 'msg ' + state.reqMsg.type;
+  box.textContent = t(state.reqMsg.key, state.reqMsg.vars);
+  box.hidden = false;
+}
+
+// ---------- Save / restore work in browser storage (by tender ID + file content) ----------
+function saveKey() { return 'tpb-work-' + (state.tender && state.tender.tender_id); }
+function saveWork() {
+  if (!state.tender || !state.files.length) return;
+  const match = {};
+  for (const [rid, fid] of Object.entries(state.match)) { const f = fileById(fid); if (f) match[rid] = f.hash; }
+  try { localStorage.setItem(saveKey(), JSON.stringify({ match, expiry: state.expiry })); } catch (e) {}
+}
+function restoreWork() {
+  if (!state.tender) return;
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(saveKey()) || 'null'); } catch (e) {}
+  if (!saved) return;
+  for (const [rid, d] of Object.entries(saved.expiry || {})) if (reqById(rid) && !state.expiry[rid]) state.expiry[rid] = d;
+  for (const [rid, hash] of Object.entries(saved.match || {})) {
+    if (!reqById(rid) || state.match[rid]) continue;
+    const f = state.files.find((x) => x.hash === hash && !reqForFile(x.id));
+    if (f && !matchConflict(f.id, rid)) state.match[rid] = f.id;
+  }
+}
+
 function renderAll() {
+  saveWork();
+  renderReqMsg();
   const has = !!state.tender;
   $('#step2').hidden = !has;
   $('#step3').hidden = !has;
